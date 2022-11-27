@@ -41,22 +41,36 @@ mod tests {
             input_map.push(line.chars().map(|x| (x as usize) - 48).collect());      //48 is ascii for '0'
         }
 
+        println!("<--- Building Points Map --->");
         let mut points_map: Vec<Vec<Point>> = Vec::new();
-        for row_index in 0..input_map.len() {
-            let mut points_row: Vec<Point> = Vec::new();
-            for col_index in 0..input_map[0].len() {
-                points_row.push(Point{
-                    x: col_index,
-                    y: row_index,
-                    value: input_map[row_index][col_index],
-                    distance_to_start: 500,
-                    next_point_set: false,
-                    next_point: vec![0,0],
-                });
+        for row_multiplier in 0..5 {
+            for row_index in 0..input_map.len() {
+                let mut points_row: Vec<Point> = Vec::new();
+                for col_multiplier in 0..5 {
+                    for col_index in 0..input_map[0].len() {
+                        let mut point_value: usize = (input_map[row_index][col_index] + row_multiplier + col_multiplier) % 9;
+                        if point_value == 0 {
+                            point_value = 9;
+                        }
+                        points_row.push(Point{
+                            x: col_index + col_multiplier*(input_map[0].len()),
+                            y: row_index + row_multiplier*(input_map.len()),
+                            value: point_value,
+                            distance_to_start: 500,
+                            next_point_set: false,
+                            next_point: vec![0,0],
+                        });
+                    }
+                }
+                points_map.push(points_row);
             }
-            points_map.push(points_row);
         }
 
+        //print_map(&points_map);
+        //println!("{:?}", points_map.len());
+        //println!("{:?}", points_map[0].len());
+
+        println!("<--- Calculating Distances --->");
         points_map[0][0].distance_to_start = 0;
         calc_distances_djikstra(&mut points_map);
         //calc_distances_djikstra(&mut points_map);
@@ -188,6 +202,8 @@ fn calc_distances_djikstra(points_map: &mut Vec<Vec<Point>>) {
                 }
 
                 let current_point = points_map[row_index][col_index].clone();
+                //println!("Current point = {:?}", current_point);
+                //println!("Neighbours = {:?}", neighbours);
                 for neighbour in neighbours {
                     let current_point_distance = get_distance_to_start(current_point.y, current_point.x, &points_map);
                     let neighbour_distance = get_distance_to_start(neighbour[0] as usize, neighbour[1] as usize, &points_map);
@@ -212,6 +228,16 @@ fn print_distances(points_map: &Vec<Vec<Point>>) {
     for row_index in 0..points_map.len() {
         for col_index in 0..points_map[0].len() {
             print!("{:?},", points_map[row_index][col_index].distance_to_start);
+        }
+        print!("\n");
+    }
+    print!("\n");
+}
+
+fn print_map(points_map: &Vec<Vec<Point>>) {
+    for row_index in 0..points_map.len() {
+        for col_index in 0..points_map[0].len() {
+            print!("{:?},", points_map[row_index][col_index].value);
         }
         print!("\n");
     }
