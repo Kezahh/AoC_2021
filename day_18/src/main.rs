@@ -360,6 +360,10 @@ fn quick_reduce_test(input_string: &str, output_string: &str, break_after_first:
 }
 
 fn add_list(list_file: &str, output_string: &str) {
+    println!("--- TEST ---");
+    println!("input = {:?}", list_file);
+    println!("expected_output = {:?}", output_string);
+
     let file_lines = generic::read_in_file(list_file);
     let mut snail_string: String = file_lines[0].clone();
     let adding_lines: Vec<String> = file_lines[1..].to_vec();
@@ -387,11 +391,6 @@ fn add_list(list_file: &str, output_string: &str) {
         snail_string = snail_num.get_string(&all_snail_nums);
     }
 
-    
-    
-    println!("--- TEST ---");
-    println!("input = {:?}", list_file);
-    println!("expected_output = {:?}", output_string);
     println!("actual output = {:?}", snail_string);
     println!("---------");
 
@@ -436,15 +435,16 @@ mod tests {
     }
 
     #[test]
-    fn testing_more() {
-        let snail_string: String = "[[1,[1,[4,[5,5]]]],[2,[3,3]]]".to_string();
-        
-        let mut all_snail_nums: Vec<SnailPair> = Vec::new();
-        let snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
-        println!("{:?}", snail_num.get_string(&all_snail_nums));
-        reduce_snail_num(&snail_num, &mut all_snail_nums, true);
-        
-        println!("{:?}", snail_num.get_string(&all_snail_nums));
+    fn big_list_tests() {
+        add_list("input_example_21.txt", "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]");        
+        add_list("input_example_22.txt", "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]");        
+        add_list("input_example_23.txt", "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]");        
+        add_list("input_example_24.txt", "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]");        
+        add_list("input_example_25.txt", "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]");        
+        add_list("input_example_26.txt", "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]");        
+        add_list("input_example_27.txt", "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]");        
+        add_list("input_example_28.txt", "[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]");        
+        add_list("input_example_29.txt", "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
     }
 
 
