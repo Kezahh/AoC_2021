@@ -77,6 +77,22 @@ impl SnailPair {
 
         return answer;
     }
+
+    fn calculate_magnitude(&self, all_snail_nums: &Vec<SnailPair>) -> usize {
+        let mut answer: usize = 0;
+        if self.left_is_number {
+            answer += 3 * self.left_num;
+        } else {
+            answer += 3 * all_snail_nums[self.left_snail_index].calculate_magnitude(&all_snail_nums);
+        }
+        if self.right_is_number {
+            answer += 2 * self.right_num;
+        } else {
+            answer += 2 * all_snail_nums[self.right_snail_index].calculate_magnitude(&all_snail_nums);
+        }
+
+        return answer;
+    }
 }
 
 fn string_to_list(snail_num: String) -> Vec<Vec<usize>> {
@@ -401,6 +417,27 @@ fn add_list(list_file: &str, output_string: &str) {
     assert!(output_string.to_string() == snail_string);
 }
 
+fn check_magnitude(input_string: &str, expected_answer: usize) {
+    let snail_string: String = input_string.to_string();
+        
+    let mut all_snail_nums: Vec<SnailPair> = Vec::new();
+    let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
+    let parent_snail_index: usize = all_snail_nums.len() - 1;
+    reduce_snail_num(&snail_num, &mut all_snail_nums, false);
+    snail_num = all_snail_nums[parent_snail_index].clone();
+    let reduced_string = snail_num.get_string(&all_snail_nums);
+
+    let magnitude = snail_num.calculate_magnitude(&all_snail_nums);
+    
+    println!("--- TEST ---");
+    println!("input = {:?}", input_string);
+    println!("expected_output = {:?}", expected_answer);
+    println!("actual output = {:?}", magnitude);
+    println!("---------");
+
+    assert!(expected_answer == magnitude);
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -447,8 +484,102 @@ mod tests {
         add_list("input_example_29.txt", "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
     }
 
+    #[test]
+    fn test_magnitudes() {
+        check_magnitude("[[1,2],[[3,4],5]]", 143);
+        check_magnitude("[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", 1384);
+        check_magnitude("[[[[1,1],[2,2]],[3,3]],[4,4]]", 445);
+        check_magnitude("[[[[3,0],[5,3]],[4,4]],[5,5]]", 791);
+        check_magnitude("[[[[5,0],[7,4]],[5,5]],[6,6]]", 1137);
+        check_magnitude("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", 3488);
+    }
 
+    #[test]
+    fn final_example() {
+        add_list("input_example_31.txt", "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]");
+        check_magnitude("[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]", 4140);
+    }
+
+    #[test]
     fn part_1() {
-        let input_lines = generic::read_in_file("input_example_1.txt");
+        let list_file = "input.txt";
+        println!("--- TEST ---");
+        println!("input = {:?}", list_file);
+
+        let file_lines = generic::read_in_file(list_file);
+        let mut snail_string: String = file_lines[0].clone();
+        let adding_lines: Vec<String> = file_lines[1..].to_vec();
+            
+        let mut all_snail_nums: Vec<SnailPair> = Vec::new();
+        let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
+
+        for line_index in 0..file_lines.len() {
+            if line_index != 0 {
+                let mut new_string = String::new();
+                new_string.push_str("[");
+                new_string.push_str(snail_string.as_str());
+                new_string.push_str(",");
+                new_string.push_str(file_lines[line_index].as_str());
+                new_string.push_str("]");
+
+                snail_string = new_string.clone();
+            }
+
+            snail_num = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
+            let parent_snail_index: usize = all_snail_nums.len() - 1;
+            reduce_snail_num(&snail_num, &mut all_snail_nums, false);
+            snail_num = all_snail_nums[parent_snail_index].clone();
+            
+            snail_string = snail_num.get_string(&all_snail_nums);
+        }
+
+        let magnitude = snail_num.calculate_magnitude(&all_snail_nums);
+
+        println!("actual output = {:?}", snail_string);
+        println!("actual magnitude = {:?}", magnitude);
+        println!("---------");
+    }
+
+    #[test]
+    fn part_2() {
+        //let list_file = "input_example_41.txt";
+        let list_file = "input.txt";
+        println!("--- TEST ---");
+        println!("input = {:?}", list_file);
+
+        let file_lines = generic::read_in_file(list_file);
+
+        let mut all_possible_snail_nums: Vec<String> = Vec::new();
+
+        for line_index in 0..file_lines.len() {
+            for line_index2 in 0..file_lines.len() {
+                if line_index2 != line_index {
+                    let mut new_string = String::new();
+                    new_string.push_str("[");
+                    new_string.push_str(file_lines[line_index].as_str());
+                    new_string.push_str(",");
+                    new_string.push_str(file_lines[line_index2].as_str());
+                    new_string.push_str("]");
+                    all_possible_snail_nums.push(new_string);
+                }
+            }
+        }
+
+        let mut max_magnitude = 0;
+        for snail_string in all_possible_snail_nums {
+            let mut all_snail_nums: Vec<SnailPair> = Vec::new();
+            let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
+            let parent_snail_index: usize = all_snail_nums.len() - 1;
+            reduce_snail_num(&snail_num, &mut all_snail_nums, false);
+            snail_num = all_snail_nums[parent_snail_index].clone();
+            
+            let magnitude = snail_num.calculate_magnitude(&all_snail_nums);
+
+            if magnitude > max_magnitude {
+                max_magnitude = magnitude;
+            }
+        }
+
+        println!("Max magnitude is {:?}", max_magnitude);
     }
 }
