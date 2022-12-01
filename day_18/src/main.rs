@@ -217,25 +217,31 @@ fn count_commas(s: &String) -> usize {
 }
 
 fn reduce_snail_num(snail_num: &SnailPair, mut all_snail_nums: &mut Vec<SnailPair>, break_after_first: bool) {
-    let mut num_index: usize = 0;
-    let mut current_list = snail_num.get_num_list(None, &all_snail_nums);
-    let mut all_explosions_done = false;
-    let mut not_exploded_count = 0;
+    //println!("{:?}", snail_num.get_string(&all_snail_nums));
+    if do_explosions(snail_num, all_snail_nums, break_after_first) == false && break_after_first {
+        do_splits(snail_num, all_snail_nums);
+        return ();
+    }
+    while !break_after_first && do_splits(snail_num, all_snail_nums) {
+        do_explosions(snail_num, all_snail_nums, break_after_first);
+    }
+}
 
-    println!("{:?}", snail_num.get_string(&all_snail_nums));
-    println!("start current_list = {:?}", current_list);
+fn do_explosions(snail_num: &SnailPair, all_snail_nums: &mut Vec<SnailPair>, break_after_first: bool) -> bool {
+    let mut current_list = snail_num.get_num_list(None, &all_snail_nums);
+    let mut num_index = 0;
+    let mut snail_exploded_count = 0;
+    
     while num_index < current_list.len(){
-        
         let mut snail_has_exploded = false;
         let snail_to_explode = &current_list[num_index];
         let num: usize = snail_to_explode.num;
         let depth: usize = snail_to_explode.depth;
 
-        if depth > 4 && !all_explosions_done {
-            //println!("num_index = {:?}", num_index);
-            //println!("current_list = {:?}", current_list);
+        if depth > 4 {
             assert!(current_list[num_index+1].depth == depth);
 
+            // increase left number
             if num_index > 0 {
                 // number exists to the left.
                 let target_snail = &current_list[num_index - 1];
@@ -247,6 +253,8 @@ fn reduce_snail_num(snail_num: &SnailPair, mut all_snail_nums: &mut Vec<SnailPai
                     all_snail_nums[target_snail.snail_index].right_num += num;
                 }
             }
+
+            // increase right number
             if num_index < (current_list.len() - 2) {
                 // number exists to the right.
                 let target_snail = &current_list[num_index + 2];
@@ -274,17 +282,33 @@ fn reduce_snail_num(snail_num: &SnailPair, mut all_snail_nums: &mut Vec<SnailPai
             //add extra num index to skip right num.
             num_index += 1;
             snail_has_exploded = true;
-        } else {
-            not_exploded_count += 1;
-        }
-        if not_exploded_count == current_list.len() {
-            all_explosions_done = true;
-            num_index = 0;
         }
 
-        if all_explosions_done && num >= 10 {
-            println!("just before split");
-            println!("current_list = {:?}", current_list);
+        num_index += 1;
+
+        if snail_has_exploded {
+            snail_exploded_count += 1;
+            if break_after_first {
+                return true;
+            } else {
+                current_list = snail_num.get_num_list(None, &all_snail_nums);
+                num_index = 0;
+                //println!("current_list = {:?}", current_list);
+            }
+        }   
+    }
+    return snail_exploded_count > 0;
+}
+
+fn do_splits(snail_num: &SnailPair, all_snail_nums: &mut Vec<SnailPair>) -> bool {
+    let mut current_list = snail_num.get_num_list(None, &all_snail_nums);
+    let mut num_index = 0;
+
+    while num_index < current_list.len(){
+        let snail_to_split = &current_list[num_index];
+        let num: usize = snail_to_split.num;
+    
+        if num >= 10 {
             let mut new_snail_num = SnailPair {
                 left_is_number: true,
                 right_is_number: true,
@@ -298,35 +322,23 @@ fn reduce_snail_num(snail_num: &SnailPair, mut all_snail_nums: &mut Vec<SnailPai
             let new_snail_num_index: usize = new_snail_num.snail_index;
             all_snail_nums.push(new_snail_num);
             
-            if snail_to_explode.is_left {
-                all_snail_nums[snail_to_explode.snail_index].left_is_number = false;
-                all_snail_nums[snail_to_explode.snail_index].left_num = 0;
-                all_snail_nums[snail_to_explode.snail_index].left_snail_index = new_snail_num_index;
+            if snail_to_split.is_left {
+                all_snail_nums[snail_to_split.snail_index].left_is_number = false;
+                all_snail_nums[snail_to_split.snail_index].left_num = 0;
+                all_snail_nums[snail_to_split.snail_index].left_snail_index = new_snail_num_index;
             } else {
-                all_snail_nums[snail_to_explode.snail_index].right_is_number = false;
-                all_snail_nums[snail_to_explode.snail_index].right_num = 0;
-                all_snail_nums[snail_to_explode.snail_index].right_snail_index = new_snail_num_index;
+                all_snail_nums[snail_to_split.snail_index].right_is_number = false;
+                all_snail_nums[snail_to_split.snail_index].right_num = 0;
+                all_snail_nums[snail_to_split.snail_index].right_snail_index = new_snail_num_index;
             }
-            snail_has_exploded = true;
-
-            // after a split, reset to do explosions again.
-            all_explosions_done = false;
-            not_exploded_count = 0;
+            return true;
         }
         num_index += 1;
-
-        if snail_has_exploded {
-            //println!("{:?}", snail_num.get_string(&all_snail_nums));
-            if break_after_first {
-                break;
-            } else {
-                current_list = snail_num.get_num_list(None, &all_snail_nums);
-                num_index = 0;
-                println!("current_list = {:?}", current_list);
-            }
-        }
     }
+
+    return false;
 }
+
 
 fn quick_reduce_test(input_string: &str, output_string: &str, break_after_first: bool) {
     let snail_string: String = input_string.to_string();
@@ -366,7 +378,7 @@ fn add_list(list_file: &str, output_string: &str) {
             snail_string = new_string.clone();
         }
 
-        println!("{:?}", snail_string);
+        //println!("{:?}", snail_string);
         let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
         let parent_snail_index: usize = all_snail_nums.len() - 1;
         reduce_snail_num(&snail_num, &mut all_snail_nums, false);
@@ -383,9 +395,9 @@ fn add_list(list_file: &str, output_string: &str) {
     println!("actual output = {:?}", snail_string);
     println!("---------");
 
-    let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
-    println!("snail num = {:?}", snail_num);
-    println!("{:?}", snail_num.get_num_list(None, &all_snail_nums));
+    //let mut snail_num: SnailPair = string_to_snail_num(&snail_string, &mut all_snail_nums).unwrap();
+    //println!("snail num = {:?}", snail_num);
+    //println!("{:?}", snail_num.get_num_list(None, &all_snail_nums));
 
     assert!(output_string.to_string() == snail_string);
 }
@@ -417,9 +429,9 @@ mod tests {
 
     #[test]
     fn list_tests () {
-        //add_list("input_example_1.txt", "[[[[1,1],[2,2]],[3,3]],[4,4]]");
-        //add_list("input_example_2.txt", "[[[[3,0],[5,3]],[4,4]],[5,5]]");
-        //add_list("input_example_3.txt", "[[[[5,0],[7,4]],[5,5]],[6,6]]");
+        add_list("input_example_1.txt", "[[[[1,1],[2,2]],[3,3]],[4,4]]");
+        add_list("input_example_2.txt", "[[[[3,0],[5,3]],[4,4]],[5,5]]");
+        add_list("input_example_3.txt", "[[[[5,0],[7,4]],[5,5]],[6,6]]");
         add_list("input_example_4.txt", "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
     }
 
